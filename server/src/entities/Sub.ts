@@ -1,6 +1,8 @@
 import { Expose } from "class-transformer";
-import { BaseEntity, Column, Index, JoinColumn, ManyToOne, OneToMany } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from "typeorm";
 import { User } from "./User";
+import BaseEntity from './Entity'
+import Post from "./Post";
 
 @Entity("subs")
 export default class Sub extends BaseEntity {
