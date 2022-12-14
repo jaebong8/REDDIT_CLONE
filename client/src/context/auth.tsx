@@ -7,6 +7,11 @@ interface State {
   loading: boolean;
 }
 
+interface Action {
+  type: string;
+  payload: any;
+}
+
 const StateContext = createContext<State>({
   authenticated: false,
   user: undefined,
@@ -14,11 +19,6 @@ const StateContext = createContext<State>({
 });
 
 const DispatchContext = createContext<any>(null);
-
-interface Action {
-  type: string;
-  payload: any;
-}
 
 const reducer = (state: State, { type, payload }: Action) => {
   switch (type) {
