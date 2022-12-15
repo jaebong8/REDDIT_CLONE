@@ -1,4 +1,5 @@
 import axios from "axios";
+import { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
 import React, { FormEvent, useState } from "react";
 import InputGroup from "../../components/InputGroup";
@@ -72,3 +73,17 @@ const SubCreate = () => {
 };
 
 export default SubCreate;
+
+export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
+  try {
+    const cookie = req.headers.cookie;
+    if (!cookie) throw new Error("missing auth token cookie");
+
+    await axios.get("/auth/me", { headers: { cookie } });
+
+    return { props: {} };
+  } catch (error) {
+    res.writeHead(307, { Location: "/Login" }).end();
+    return { props: {} };
+  }
+};
