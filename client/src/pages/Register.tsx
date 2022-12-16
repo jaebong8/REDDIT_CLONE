@@ -25,7 +25,7 @@ const Register = () => {
             });
 
             console.log(res);
-            router.push("/Login");
+            router.push("/login");
         } catch (error: any) {
             console.log("error", error);
             setErrors(error.response.data || {});
@@ -62,7 +62,7 @@ const Register = () => {
                     </form>
                     <small>
                         이미 가입하셨나요?
-                        <Link href={"/Login"} legacyBehavior>
+                        <Link href={"/login"} legacyBehavior>
                             <a className="ml-1 text-blue-500 uppercase">
                                 로그인
                             </a>

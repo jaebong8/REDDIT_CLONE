@@ -58,7 +58,7 @@ const Login = () => {
                     </form>
                     <small>
                         아직 아이디가 없으신가요?
-                        <Link href={"/Register"} legacyBehavior>
+                        <Link href={"/register"} legacyBehavior>
                             <a className="ml-1 text-blue-500 uppercase">
                                 회원가입
                             </a>
