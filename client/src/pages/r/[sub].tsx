@@ -1,8 +1,9 @@
 import axios from "axios";
 import Image from "next/image";
 import { useRouter } from "next/router";
-import React from "react";
+import React, { ChangeEvent, useEffect, useRef, useState } from "react";
 import useSWR from "swr";
+import { useAuthState } from "../../context/auth";
 
 const SubPage = () => {
     const fetcher = async (url: string) => {
@@ -13,20 +14,59 @@ const SubPage = () => {
             throw error.response.data;
         }
     };
-
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
     const subName = router.query.sub;
+    const [ownSub, setOwnSub] = useState(false);
+    const { authenticated, user } = useAuthState();
 
     const { data: sub, error } = useSWR(
         subName ? `/subs/${subName}` : null,
         fetcher
     );
+    console.log(sub);
 
+    useEffect(() => {
+        if (!sub || !user) return;
+        setOwnSub(authenticated && user.username === sub.username);
+    }, [sub]);
+
+    const uploadImage = async (event: ChangeEvent<HTMLInputElement>) => {
+        if (event.target.files === null) return;
+
+        const file = event.target.files[0];
+        console.log(event.target.files);
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("type", fileInputRef.current!.name);
+
+        try {
+            await axios.post(`/subs/${sub.name}/upload`, formData, {
+                headers: { "Context-Type": "multipart/form-data" },
+            });
+        } catch (error) {}
+    };
+
+    const openFileInput = (type: string) => {
+        if (!ownSub) return;
+        const fileInput = fileInputRef.current;
+        if (fileInput) {
+            fileInput.name = type;
+            fileInput.click();
+        }
+    };
     return (
         <>
             {sub && (
                 <>
                     <div>
+                        <input
+                            type="file"
+                            hidden={true}
+                            ref={fileInputRef}
+                            onChange={uploadImage}
+                        />
                         <div className="bg-gray-400 ">
                             {sub.bannerUrl ? (
                                 <div
@@ -37,9 +77,13 @@ const SubPage = () => {
                                         backgroundSize: "cover",
                                         backgroundPosition: "center",
                                     }}
+                                    onClick={() => openFileInput("banner")}
                                 ></div>
                             ) : (
-                                <div className="h-20 bg-gray-400 "></div>
+                                <div
+                                    className="h-20 bg-gray-400 "
+                                    onClick={() => openFileInput("banner")}
+                                ></div>
                             )}
                         </div>
 
@@ -53,6 +97,9 @@ const SubPage = () => {
                                             width={70}
                                             height={70}
                                             className="rounded-full"
+                                            onClick={() =>
+                                                openFileInput("image")
+                                            }
                                         />
                                     )}
                                 </div>

@@ -16,6 +16,7 @@ app.use(cors({origin,credentials: true}))
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(cookieParser())
+app.use(express.static("public"))
 
 app.get("/",(_, res)=>res.send("running......."));
 
