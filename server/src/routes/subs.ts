@@ -19,7 +19,7 @@ const createSub = async (req: Request, res: Response) => {
 
         const sub = await AppDataSource.getRepository(Sub)
             .createQueryBuilder("sub")
-            .where("lower(sub.name) = :name", { name: name.toLowercase() })
+            .where("lower(sub.name) = :name", { name: name.toLowerCase() })
             .getOne();
 
         if (sub) errors.name = "서브가 이미 존재합니다.";
@@ -52,15 +52,15 @@ const createSub = async (req: Request, res: Response) => {
 
 const topSubs = async (req: Request, res: Response) => {
     try {
-        const imageUrlExp = `COALESCE(s."imageUrn",'https://www.gravatar.com/avatar?d=mp&f=y')`;
+        const imageUrlExp = `COALESCE(s."imageUrn", 'https://www.gravatar.com/avatar?d=mp&f=y')`;
         const subs = await AppDataSource.createQueryBuilder()
             .select(
-                `s.title, s.name, ${imageUrlExp} as "ImageUrl", count(p.id) as "postCount"`
+                `s.title, s.name, ${imageUrlExp} as "imageUrl", count(p.id) as "postCount"`
             )
             .from(Sub, "s")
-            .leftJoin(Post, "p", `s.name = p."subName`)
+            .leftJoin(Post, "p", `s.name = p."subName"`)
             .groupBy('s.title, s.name, "imageUrl"')
-            .orderBy(`"postCount", "DESC"`)
+            .orderBy(`"postCount"`, "DESC")
             .limit(5)
             .execute();
             return res.json(subs);
@@ -70,6 +70,17 @@ const topSubs = async (req: Request, res: Response) => {
     }
 };
 
+const getSub = async (req: Request, res: Response)=>{
+    const name = req.params.name
+    try {
+        const sub = await Sub.findOneByOrFail({name});
+        return res.json(sub)
+    } catch (error) {
+        return res.status(404).json({error: "커뮤니티를 찾을 수 없습니다."})
+    }
+}
+
+router.get("/:name", userMiddleware, getSub)
 router.post("/", userMiddleware, authMiddleware, createSub);
 router.get("/sub/topSubs", topSubs);
 export default router;
