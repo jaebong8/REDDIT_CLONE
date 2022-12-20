@@ -30,7 +30,7 @@ export default class Post extends BaseEntity {
     @Column()
     username: string;
 
-    @ManyToMany(()=>User, (user)=>user.posts)
+    @ManyToOne(()=>User, (user)=>user.posts)
     @JoinColumn({name:"username", referencedColumnName: "username"})
     user: User;
 

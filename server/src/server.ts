@@ -3,6 +3,7 @@ import morgan from 'morgan';
 import { AppDataSource } from './data-source';
 import authRoutes from './routes/auth'
 import subRoutes from './routes/subs'
+import postsRoutes from './routes/posts'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import cookieParser from 'cookie-parser';
@@ -34,3 +35,4 @@ app.listen(port, async ()=>{
 
 app.use("/api/auth",authRoutes)
 app.use("/api/subs",subRoutes)
+app.use("/api/posts",postsRoutes)

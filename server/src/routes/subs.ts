@@ -6,7 +6,7 @@ import { AppDataSource } from "../data-source";
 import Sub from "../entities/Sub";
 import { User } from "../entities/User";
 import Post from "../entities/Post";
-import multer, { FileFilterCallback } from 'multer'
+import multer, { FileFilterCallback } from "multer";
 import { makeId } from "../utils/helpers";
 import { unlinkSync } from "fs";
 import path from "path";
@@ -67,98 +67,123 @@ const topSubs = async (req: Request, res: Response) => {
             .orderBy(`"postCount"`, "DESC")
             .limit(5)
             .execute();
-            return res.json(subs);
+        return res.json(subs);
     } catch (error) {
-        console.log(error)
-        return res.status(500).json({error: "topSubs Error"})
+        console.log(error);
+        return res.status(500).json({ error: "topSubs Error" });
     }
 };
 
-const getSub = async (req: Request, res: Response)=>{
-    const name = req.params.name
+const getSub = async (req: Request, res: Response) => {
+    const name = req.params.name;
     try {
-        const sub = await Sub.findOneByOrFail({name});
-        return res.json(sub)
+        const sub = await Sub.findOneByOrFail({ name });
+
+        const posts = await Post.find({
+            where: { subName: sub.name },
+            order: { createdAt: "DESC" },
+            relations: ["comments", "votes"],
+        });
+
+        sub.posts = posts;
+
+        if (res.locals.user) {
+            sub.posts.forEach((post) => post.setUserVote(res.locals.user));
+        }
+        return res.json(sub);
     } catch (error) {
-        return res.status(404).json({error: "커뮤니티를 찾을 수 없습니다."})
+        return res.status(404).json({ error: "커뮤니티를 찾을 수 없습니다." });
     }
-}
+};
 
-const ownSub = async (req: Request, res: Response, next: NextFunction)=>{
-    const user:User = res.locals.user;
+const ownSub = async (req: Request, res: Response, next: NextFunction) => {
+    const user: User = res.locals.user;
     try {
-        const sub = await Sub.findOneOrFail({ where: { name: req.params.name }});
+        const sub = await Sub.findOneOrFail({
+            where: { name: req.params.name },
+        });
 
-        if(sub.username !== user.username) {
-            return res.status(403).json({error: "해당 커뮤니티의 권한이 없습니다."})
+        if (sub.username !== user.username) {
+            return res
+                .status(403)
+                .json({ error: "해당 커뮤니티의 권한이 없습니다." });
         }
 
         res.locals.sub = sub;
         next();
     } catch (error) {
-        console.log(error)
-        return res.status(500).json({error: "ownSub 에러가 발생했습니다."})
-    } 
-}
+        console.log(error);
+        return res.status(500).json({ error: "ownSub 에러가 발생했습니다." });
+    }
+};
 
 const upload = multer({
     storage: multer.diskStorage({
         destination: "public/images",
-        filename: (_, file, callback)=>{
+        filename: (_, file, callback) => {
             const name = makeId(10);
-            callback(null,name + path.extname(file.originalname))
-        }
+            callback(null, name + path.extname(file.originalname));
+        },
     }),
-    fileFilter: (_, file:any, callback: FileFilterCallback)=>{
-        if(file.mimetype === "image/jpeg" || file.mimetype === "image/png") {
-            callback(null, true)
-        }else {
-            callback(new Error("이미지 형식이 아닙니다."))
+    fileFilter: (_, file: any, callback: FileFilterCallback) => {
+        if (file.mimetype === "image/jpeg" || file.mimetype === "image/png") {
+            callback(null, true);
+        } else {
+            callback(new Error("이미지 형식이 아닙니다."));
         }
-    }
-
-})
+    },
+});
 const uploadSubImage = async (req: Request, res: Response) => {
-    const sub:Sub = res.locals.sub;
+    const sub: Sub = res.locals.sub;
 
     try {
-        const type = req.body.type
-        console.log("type",type)
-        if(type !== "image" && type !== "banner"){
-            if(!req.file?.path) {
-                return res.status(400).json({error: "유효하지 않은 파일"})
+        const type = req.body.type;
+        console.log("type", type);
+        if (type !== "image" && type !== "banner") {
+            if (!req.file?.path) {
+                return res.status(400).json({ error: "유효하지 않은 파일" });
             }
 
             unlinkSync(req.file.path);
-            return res.status(400).json({error: "잘못된 유형123123"})
+            return res.status(400).json({ error: "잘못된 유형123123" });
         }
 
-        let oldImageUrn:string = "";
-        if(type === "image") {
+        let oldImageUrn: string = "";
+        if (type === "image") {
             oldImageUrn = sub.imageUrn || "";
             sub.imageUrn = req.file?.filename || "";
-
-        }else if(type === "banner"){
+        } else if (type === "banner") {
             oldImageUrn = sub.bannerUrn || "";
             sub.bannerUrn = req.file?.filename || "";
         }
         await sub.save();
 
-        if(oldImageUrn !== "") {
-            const fullFileName = path.resolve(process.cwd(),"public", "images", oldImageUrn);
-            unlinkSync(fullFileName)
+        if (oldImageUrn !== "") {
+            const fullFileName = path.resolve(
+                process.cwd(),
+                "public",
+                "images",
+                oldImageUrn
+            );
+            unlinkSync(fullFileName);
         }
 
         return res.json(sub);
     } catch (error) {
         console.log(error);
-        return res.status(500).json({error: "문제가 발생했습니다"})
-        
+        return res.status(500).json({ error: "문제가 발생했습니다" });
     }
-}
+};
 
-router.get("/:name", userMiddleware, getSub)
+router.get("/:name", userMiddleware, getSub);
 router.post("/", userMiddleware, authMiddleware, createSub);
 router.get("/sub/topSubs", topSubs);
-router.post("/:name/upload", userMiddleware, authMiddleware, ownSub, upload.single("file"), uploadSubImage)
+router.post(
+    "/:name/upload",
+    userMiddleware,
+    authMiddleware,
+    ownSub,
+    upload.single("file"),
+    uploadSubImage
+);
 export default router;
