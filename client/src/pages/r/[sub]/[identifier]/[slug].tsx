@@ -14,7 +14,7 @@ const PostPage = () => {
     const { data: post, error } = useSWR<Post>(
         identifier && slug ? `/posts/${identifier}/${slug}` : null
     );
-    const { data: comments } = useSWR<Comment[]>(
+    const { data: comments, mutate } = useSWR<Comment[]>(
         identifier && slug ? `/posts/${identifier}/${slug}/comments` : null
     );
     console.log(comments);
@@ -27,6 +27,7 @@ const PostPage = () => {
                 `/posts/${post?.identifier}/${post?.slug}/comments`,
                 { body: newComment }
             );
+            mutate();
             setNewComment("");
         } catch (error) {
             console.log(error);

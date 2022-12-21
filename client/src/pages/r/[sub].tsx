@@ -13,7 +13,11 @@ const SubPage = () => {
     const [ownSub, setOwnSub] = useState(false);
     const { authenticated, user } = useAuthState();
 
-    const { data: sub, error } = useSWR(subName ? `/subs/${subName}` : null);
+    const {
+        data: sub,
+        error,
+        mutate,
+    } = useSWR(subName ? `/subs/${subName}` : null);
     console.log(sub);
 
     useEffect(() => {
@@ -35,6 +39,7 @@ const SubPage = () => {
             await axios.post(`/subs/${sub.name}/upload`, formData, {
                 headers: { "Context-Type": "multipart/form-data" },
             });
+            mutate();
         } catch (error) {}
     };
 
