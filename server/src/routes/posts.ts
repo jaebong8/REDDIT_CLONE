@@ -1,4 +1,5 @@
 import { Request, Response, Router } from "express";
+import Comment from "../entities/Comment";
 import Post from "../entities/Post";
 import Sub from "../entities/Sub";
 import authMiddleware from "../middlewares/auth";
@@ -50,7 +51,50 @@ const getPost = async (req:Request, res:Response)=> {
   }
 }
 
+const createPostComment = async (req:Request, res:Response) => {
+    const {identifier, slug} = req.params;
+    const body = req.body.body;
+
+    try {
+        const post = await Post.findOneByOrFail({identifier, slug})
+        const comment = new Comment();
+        comment.body = body;
+        comment.user = res.locals.user;
+        comment.post = post;
+
+        if(res.locals.user) {
+          post.setUserVote(res.locals.user);
+        }
+
+        await comment.save();
+        return res.json(comment)
+    } catch (error) {
+      console.log(error)
+      return res.status(400).json({error: "createPostComment Error"})
+    }
+}
+
+const getPostComment = async (req:Request, res:Response) => {
+  const {identifier, slug} = req.params;
+  try {
+    const post = await Post.findOneByOrFail({identifier, slug});
+    const comments = await Comment.find({
+      where: {postId: post.id},
+      order: {createdAt: "DESC"},
+      relations: ["votes"]
+    })
+    if(res.locals.user){
+      comments.forEach((comment) => comment.setUserVote(res.locals.user))
+    }
+    return res.json(comments)
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({error: "getPostComment Error"})
+  }
+}
 router.post("/", userMiddleware, authMiddleware, createPost)
 router.get("/:identifier/:slug", userMiddleware, getPost)
 
+router.post("/:identifier/:slug/comments", userMiddleware, createPostComment)
+router.get("/:identifier/:slug/comments", userMiddleware, getPostComment)
 export default router
