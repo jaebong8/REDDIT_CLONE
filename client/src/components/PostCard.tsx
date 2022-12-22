@@ -10,7 +10,8 @@ import { Post } from "../types";
 
 interface PostCardProps {
     post: Post;
-    subMutate: () => void;
+    subMutate?: () => void;
+    mutate?: () => void;
 }
 const PostCard = ({
     post: {
@@ -28,6 +29,7 @@ const PostCard = ({
         sub,
     },
     subMutate,
+    mutate,
 }: PostCardProps) => {
     const router = useRouter();
     const { authenticated } = useAuthState();
@@ -39,7 +41,8 @@ const PostCard = ({
 
         try {
             await axios.post("/votes", { identifier, slug, value });
-            subMutate();
+            if (subMutate) subMutate();
+            if (mutate) mutate();
         } catch (error) {
             console.log(error);
         }
@@ -74,10 +77,10 @@ const PostCard = ({
             <div className="w-full p-2">
                 {!isInSubPage && (
                     <div className="flex items-center">
-                        <Link href={`/r/${subName}`}>
+                        <Link href={`/r/${subName}`} legacyBehavior>
                             <a>
                                 <Image
-                                    src={sub!.imgUrl}
+                                    src={sub!.imageUrl}
                                     alt="sub"
                                     className="rounded-full cursor-pointer "
                                     width={12}
@@ -85,7 +88,7 @@ const PostCard = ({
                                 />
                             </a>
                         </Link>
-                        <Link href={`/r/${subName}`}>
+                        <Link href={`/r/${subName}`} legacyBehavior>
                             <a className="ml-2 text-xs font-bold cursor-pointer hover:underline">
                                 /r/{subName}
                             </a>

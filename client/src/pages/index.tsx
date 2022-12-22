@@ -1,11 +1,13 @@
 import { NextPage } from "next";
 import Link from "next/link";
 import useSWR from "swr";
-import React from "react";
-import { Sub } from "../types";
+import React, { useState, useEffect } from "react";
+import { Post, Sub } from "../types";
 import axios from "axios";
 import Image from "next/image";
 import { useAuthState } from "../context/auth";
+import useSWRInfinite from "swr/infinite";
+import PostCard from "../components/PostCard";
 
 const Home: NextPage = () => {
     const { authenticated } = useAuthState();
@@ -14,10 +16,69 @@ const Home: NextPage = () => {
     };
     const address = "/subs/sub/topSubs";
     const { data: topSubs } = useSWR<Sub[]>(address, fetcher);
-    console.log("topSubs", topSubs);
+
+    const getKey = (pageIndex: number, previousPageData: Post[]) => {
+        if (previousPageData && !previousPageData.length) return null;
+        return `/posts?page=${pageIndex}`;
+    };
+
+    const {
+        data,
+        error,
+        size: page,
+        setSize: setPage,
+        isValidating,
+        mutate,
+    } = useSWRInfinite<Post[]>(getKey);
+
+    const isInitialLoading = !error && !data;
+    const posts: Post[] = data ? ([] as Post[]).concat(...data) : [];
+
+    const [observedPost, setObservedPost] = useState("");
+
+    useEffect(() => {
+        if (!posts || posts.length === 0) return;
+
+        const id = posts[posts.length - 1].identifier;
+
+        if (id !== observedPost) {
+            setObservedPost(id);
+            observeElement(document.getElementById(id));
+        }
+    }, [posts]);
+
+    const observeElement = (element: HTMLElement | null) => {
+        if (!element) return;
+
+        const observer = new IntersectionObserver(
+            // entries는 IntersectionObserver 인스턴스의 배열
+            (entries) => {
+                // isIntersecting: 관찰 대상의 교차 상태(boolean)
+                if (entries[0].isIntersecting === true) {
+                    console.log("마지막 포스트에 왔습니다.");
+                    setPage(page + 1);
+                    observer.unobserve(element);
+                }
+            },
+            { threshold: 1 }
+        );
+        observer.observe(element);
+    };
+
     return (
         <div className="flex max-w-5xl px-4 pt-5 mx-auto">
-            <div className="w-full md:mr-3 md:w-8/12"></div>
+            <div className="w-full md:mr-3 md:w-8/12">
+                {isInitialLoading && (
+                    <p className="text-lg text-center">로딩 중입니다...</p>
+                )}
+                {posts?.map((post) => (
+                    <PostCard
+                        key={post.identifier}
+                        post={post}
+                        mutate={mutate}
+                    />
+                ))}
+            </div>
 
             <div className="hidden w-4/12 ml-3 md:block">
                 <div className="bg-white border rounded">
