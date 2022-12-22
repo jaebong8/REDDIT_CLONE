@@ -3,8 +3,10 @@ import Image from "next/image";
 import { useRouter } from "next/router";
 import React, { ChangeEvent, useEffect, useRef, useState } from "react";
 import useSWR from "swr";
+import PostCard from "../../components/PostCard";
 import SideBar from "../../components/SideBar";
 import { useAuthState } from "../../context/auth";
+import { Post } from "../../types";
 
 const SubPage = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -16,9 +18,8 @@ const SubPage = () => {
     const {
         data: sub,
         error,
-        mutate,
+        mutate: subMutate,
     } = useSWR(subName ? `/subs/${subName}` : null);
-    console.log(sub);
 
     useEffect(() => {
         if (!sub || !user) return;
@@ -39,7 +40,7 @@ const SubPage = () => {
             await axios.post(`/subs/${sub.name}/upload`, formData, {
                 headers: { "Context-Type": "multipart/form-data" },
             });
-            mutate();
+            subMutate();
         } catch (error) {}
     };
 
@@ -51,6 +52,26 @@ const SubPage = () => {
             fileInput.click();
         }
     };
+    let renderPosts;
+
+    if (!sub) {
+        renderPosts = <p className="text-lg text-center">로딩 중...</p>;
+    } else if (sub.posts.length === 0) {
+        renderPosts = (
+            <p className="text-lg text-center">작성 된 포스트가 없습니다.</p>
+        );
+    } else {
+        renderPosts = sub.posts.map((post: Post) => {
+            return (
+                <PostCard
+                    key={post.identifier}
+                    post={post}
+                    subMutate={subMutate}
+                />
+            );
+        });
+    }
+
     return (
         <>
             {sub && (
@@ -113,7 +134,9 @@ const SubPage = () => {
                     </div>
 
                     <div className="flex max-w-5xl px-4 pt-5 mx-auto">
-                        <div className="w-full md:mr-3 md:w-8/12"></div>
+                        <div className="w-full md:mr-3 md:w-8/12">
+                            {renderPosts}
+                        </div>
                         <SideBar sub={sub} />
                     </div>
                 </>
