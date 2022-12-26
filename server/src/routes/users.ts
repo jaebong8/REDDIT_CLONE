@@ -15,7 +15,7 @@ const getUserData = async (req:Request, res:Response)=> {
 
         const posts = await Post.find({
             where: {username: user.username},
-            relations: ["comments","vote","sub"]
+            relations: ["comments","votes","sub"]
         })
 
         const comments = await Comment.find({

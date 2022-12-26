@@ -99,7 +99,7 @@ const PostCard = ({
 
                 <p className="text-xs text-gray-400">
                     Posted by{" "}
-                    <Link href={`/r/${username}`} legacyBehavior>
+                    <Link href={`/u/${username}`} legacyBehavior>
                         <a className="mx-1 hover:underline">/u/{username}</a>
                     </Link>
                     <Link href={url} legacyBehavior>
