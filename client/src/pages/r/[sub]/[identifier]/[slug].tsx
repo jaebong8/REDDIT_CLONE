@@ -142,7 +142,7 @@ const PostPage = () => {
                             </div>
                             <div>
                                 {/* comments */}
-                                <div className=" pr-6 mb-4">
+                                <div className=" pr-6 mb-4 pl-9">
                                     {authenticated ? (
                                         <div>
                                             <p className="mb-1 text-xs">
